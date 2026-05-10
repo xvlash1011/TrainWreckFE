@@ -211,7 +211,7 @@ export default function App() {
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
-        mapboxAccessToken="sk.eyJ1IjoiY3VuY292aW5oIiwiYSI6ImNtb3hkbHZvdTBqMm4ycnNlOTV6dW96a2UifQ.0zDqJQLwUf0Thj4IJmpP2Q"
+        mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
         mapStyle={{
           version: 8,
           sources: {
