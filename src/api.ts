@@ -1,5 +1,5 @@
 // api.ts
-const BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
+const BASE_URL = `http://${window.location.hostname}:3001`;
 
 export interface APIStation {
   Id: number;
@@ -45,6 +45,7 @@ export interface TrainSchedule {
     arrivalTime: string;
     departureTime: string;
   }>;
+  occupancy?: number | null;
 }
 
 export async function fetchVNTicketStations(): Promise<MappedStation[]> {

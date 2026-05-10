@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    allowedHosts: ["semaphorical-heptahedral-miguelina.ngrok-free.dev"],
     proxy: {
       '/api/GTGV': {
         target: 'https://k.vnticketonline.vn',
