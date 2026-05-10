@@ -69,7 +69,6 @@ function getTrackSegment(latA: number, lonA: number, latB: number, lonB: number)
 
 export function TrainMarker({ train, geoTracks, stationsGeo, currentTime, onSelect, onActiveChange }: TrainProps) {
   const [position, setPosition] = useState<[number, number] | null>(null);
-  const [status, setStatus] = useState({ speed: 0, nextStation: '', destinationStation: '', eta: '' });
 
   useEffect(() => {
     // 1. Find the current segment the train is in based on `currentTime`
@@ -134,7 +133,6 @@ export function TrainMarker({ train, geoTracks, stationsGeo, currentTime, onSele
     if (currentStation === nextStation) {
       // Stopped
       setPosition([startGeo.lat, startGeo.lon]);
-      setStatus({ speed: 0, nextStation: currentStation.stationName, destinationStation: finalStationName, eta: 'Đang đón khách/Dừng' });
     } else {
       // Moving
       const depTime = new Date(currentStation.departureTime).getTime();
@@ -154,12 +152,6 @@ export function TrainMarker({ train, geoTracks, stationsGeo, currentTime, onSele
          const hours = (arrTime - depTime) / (1000 * 60 * 60);
          const speed = segmentLength / hours;
 
-         setStatus({ 
-           speed: Math.round(speed), 
-           nextStation: nextStation.stationName,
-           destinationStation: finalStationName,
-           eta: new Date(arrTime).toLocaleTimeString('vi-VN')
-         });
       }
     }
   }, [currentTime, train, geoTracks, stationsGeo]);
