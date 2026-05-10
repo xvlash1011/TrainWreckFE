@@ -1,0 +1,33 @@
+ID: 1, Name: An Hòa, Code: AHO
+ID: 4, Name: Bắc Thủy, Code: BAT
+ID: 9, Name: Bắc Kinh Tây, Code: BKT
+ID: 15, Name: Bằng Tường, Code: BTU
+ID: 30, Name: Đà Lạt, Code: DAT
+ID: 35, Name: Dĩ An, Code: DIA
+ID: 36, Name: Ðại Lãnh, Code: DLA
+ID: 40, Name: Ðông Triều, Code: DOT
+ID: 43, Name: Ðông Tác, Code: DTA
+ID: 48, Name: Gia Huynh, Code: GHU
+ID: 51, Name: Gia Ray, Code: GRA
+ID: 52, Name: HCO, Code: HCO
+ID: 53, Name: Hoành Dương, Code: HDG
+ID: 58, Name: Hòa Duyệt, Code: HOD
+ID: 63, Name: Huế, Code: HUE
+ID: 67, Name: Lạc Giao, Code: LAG
+ID: 72, Name: Lăng Cô, Code: LCO
+ID: 79, Name: Long Khánh, Code: LKH
+ID: 88, Name: Mạo Khê, Code: MAK
+ID: 89, Name: Minh Cầm, Code: MCA
+ID: 100, Name: Ninh Hoà, Code: NHO
+ID: 102, Name: Nam Khê, Code: NKH
+ID: 104, Name: Nam ninh, Code: NNI
+ID: 119, Name: Phường Mỗ, Code: PMO
+ID: 128, Name: Quế Lâm Bắc, Code: QLB
+ID: 138, Name: Sông Hóa, Code: SOH
+ID: 139, Name: Sùng Tả, Code: STA
+ID: 147, Name: Tuy Hoà, Code: THA
+ID: 149, Name: Thanh Hoá, Code: THO
+ID: 161, Name: Trịnh Châu, Code: TRC
+ID: 162, Name: Trường Sa, Code: TSA
+ID: 169, Name: Vinh, Code: VIN
+ID: 171, Name: Vĩnh Thủy, Code: VTH
