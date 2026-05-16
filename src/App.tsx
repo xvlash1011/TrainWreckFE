@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import Map, { Source, Layer, Marker, Popup, NavigationControl } from 'react-map-gl/mapbox';
+import Map, { Source, Layer, Marker, Popup } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
+import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { fetchVNTicketStations, fetchVietnamTracksAndStations, fetchRealtimeSchedules } from './api';
 import type { TrainSchedule, MappedStation } from './api';
@@ -15,12 +16,12 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const mapRef = useRef<MapRef>(null);
+  const nativeMapRef = useRef<mapboxgl.Map | null>(null);
 
   // Real-time Simulation Clock
   const [simTime, setSimTime] = useState<Date>(new Date());
 
   const [loading, setLoading] = useState(true);
-  const [showStations, setShowStations] = useState<boolean>(true);
   const [viewState, setViewState] = useState({
     longitude: 108.206230,
     latitude: 16.047079,
@@ -181,8 +182,6 @@ export default function App() {
   }, [geoTracks, selectedTrain, stations]);
 
   const visibleStations = useMemo(() => {
-    if (!showStations) return [];
-    
     let stList = stations;
     if (selectedTrain) {
        const trainStationCodes = new Set(selectedTrain.stations.map(s => s.stationCode));
@@ -193,7 +192,7 @@ export default function App() {
       if (viewState.zoom > 7) return true;
       return MAJOR_STATIONS.has(s.name);
     });
-  }, [stations, selectedTrain, showStations, viewState.zoom, MAJOR_STATIONS]);
+  }, [stations, selectedTrain, viewState.zoom, MAJOR_STATIONS]);
 
   const [stationPopupInfo, setStationPopupInfo] = useState<MappedStation | null>(null);
 
@@ -205,38 +204,45 @@ export default function App() {
     );
   }
 
+  const islands = [
+    { name: 'Quần đảo Hoàng Sa', lat: 16.5, lng: 112.0 },
+    { name: 'Quần đảo Trường Sa', lat: 10.0, lng: 114.0 }
+  ];
+
   return (
     <div className="w-full h-screen relative font-sans">
+      <style>{`
+        .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
+        .zoom-btns {
+          position: absolute;
+          left: 16px;
+          bottom: 16px;
+          transition: bottom 0.3s cubic-bezier(0.4,0,0.2,1), left 0.3s cubic-bezier(0.4,0,0.2,1);
+          z-index: 9998;
+        }
+        @media (max-width: 767px) {
+          .zoom-btns.menu-open { bottom: calc(360px + 16px); }
+        }
+        @media (min-width: 768px) {
+          .zoom-btns { bottom: 24px; }
+          .zoom-btns.menu-open { left: calc(400px + 16px); }
+          .zoom-btns.menu-closed { left: calc(64px + 16px); }
+        }
+      `}</style>
       <Map
         ref={mapRef}
         {...viewState}
         onMove={evt => setViewState(evt.viewState)}
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
-        mapStyle={{
-          version: 8,
-          sources: {
-            'osm-tiles': {
-              type: 'raster',
-              tiles: [
-                'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
-              ],
-              tileSize: 256,
-              attribution: '&copy; OpenStreetMap contributors'
-            }
-          },
-          layers: [
-            {
-              id: 'osm-tiles',
-              type: 'raster',
-              source: 'osm-tiles',
-              minzoom: 0,
-              maxzoom: 19
-            }
-          ]
+        mapStyle="mapbox://styles/mapbox/light-v11"
+        onLoad={(e) => {
+          nativeMapRef.current = (e.target as any);
+          const map = e.target as any;
+          if (typeof map.setLanguage === 'function') map.setLanguage('vi');
+          if (typeof map.setWorldview === 'function') map.setWorldview('VN');
         }}
         style={{ width: '100%', height: '100%' }}
       >
-        <NavigationControl position="bottom-left" />
 
         <Source id="tracks" type="geojson" data={tracksGeoJson}>
           <Layer
@@ -306,6 +312,22 @@ export default function App() {
             onActiveChange={(isActive) => {}}
           />
         ))}
+
+        {islands.map(is => (
+          <Marker
+            key={is.name}
+            longitude={is.lng}
+            latitude={is.lat}
+            anchor="bottom"
+          >
+            <div className="flex flex-col items-center">
+              <div className="bg-red-600 w-3 h-3 rounded-full border-2 border-white shadow-lg animate-pulse" />
+              <div className="bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded border border-red-200 mt-1 shadow-sm">
+                <span className="text-[10px] font-bold text-red-700 whitespace-nowrap">{is.name}</span>
+              </div>
+            </div>
+          </Marker>
+        ))}
       </Map>
 
       {/* Responsive Sidebar / Bottom Sheet UI */}
@@ -316,11 +338,8 @@ export default function App() {
           <div className="flex justify-between items-end mb-3">
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight line-clamp-1">
-                {selectedTrain ? `Tàu ${selectedTrain.trainCode}` : 'Đường sắt Việt Nam'}
+                {selectedTrain ? `Tàu ${selectedTrain.trainCode}` : 'Lịch trình chạy tàu'}
               </h1>
-              <p className="text-sm text-slate-500 font-medium mt-0.5">
-                Số tuyến đang vận hành: {activeSchedules.length}
-              </p>
             </div>
             <button onClick={() => setIsMenuOpen(false)} className="bg-slate-100 p-2 rounded-full text-slate-500 hover:bg-slate-200 shrink-0 ml-2" title="Ẩn Menu">
                ✕
@@ -329,7 +348,7 @@ export default function App() {
 
           <div className="bg-[#f05a5a] rounded-xl p-3 text-white shadow-lg shadow-red-500/20 mb-1">
              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
-                <div className="w-full md:w-1/2">
+                 <div className="w-full">
                   <label className="text-[10px] md:text-xs font-medium text-white/80 uppercase tracking-wider mb-1 block">Chọn chuyến tàu</label>
                   <select 
                     className="w-full bg-white/20 border-0 rounded-lg text-white font-semibold py-1.5 px-3 focus:ring-0 outline-none cursor-pointer"
@@ -347,17 +366,18 @@ export default function App() {
                     }}
                   >
                     <option value="ALL" className="text-black">Tất cả các tàu đang chạy</option>
-                    {activeSchedules.map(t => (
-                      <option key={t.tauId} value={t.tauId.toString()} className="text-black">{t.trainCode}</option>
-                    ))}
+                    <optgroup label="Tàu Bắc Nam (SE)" className="text-black font-bold">
+                      {activeSchedules.filter(t => t.trainCode.toUpperCase().startsWith('SE')).map(t => (
+                        <option key={t.tauId} value={t.tauId.toString()} className="font-normal">{t.trainCode}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Tàu địa phương" className="text-black font-bold">
+                      {activeSchedules.filter(t => !t.trainCode.toUpperCase().startsWith('SE')).map(t => (
+                        <option key={t.tauId} value={t.tauId.toString()} className="font-normal">{t.trainCode}</option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
-                {!selectedTrain && (
-                  <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg w-full md:w-auto mt-2 md:mt-0">
-                    <input type="checkbox" id="toggle-stations" checked={showStations} onChange={(e) => setShowStations(e.target.checked)} className="cursor-pointer w-4 h-4 accent-white rounded" />
-                    <label htmlFor="toggle-stations" className="text-xs font-semibold text-white cursor-pointer select-none whitespace-nowrap">Hiện tất cả nhà ga</label>
-                  </div>
-                )}
              </div>
           </div>
         </div>
@@ -465,25 +485,36 @@ export default function App() {
            </div>
         )}
       </div>
-      {/* Collapsed thin sidebar on Desktop */}
+      {/* Collapsed thin sidebar */}
       {!isMenuOpen && (
-        <div className="hidden md:flex absolute z-[9998] left-0 top-0 w-16 h-full bg-[#f8fafc] border-r border-slate-200 flex-col items-center py-6 gap-8 text-slate-400 shadow-lg">
+        <div className="flex absolute z-[9998] right-4 bottom-4 w-12 h-12 md:left-0 md:top-0 md:w-16 md:h-full bg-white md:bg-[#f8fafc] border border-slate-200 md:border-r rounded-xl md:rounded-none flex-col items-center justify-center md:py-6 text-slate-400 shadow-xl md:shadow-lg">
           <button onClick={() => setIsMenuOpen(true)} className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-600" title="Hiện Menu">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
         </div>
       )}
 
-      {/* Floating Button to Re-open Menu (Mobile only) */}
-      {!isMenuOpen && (
+      {/* Custom Zoom Buttons */}
+      <div className={`zoom-btns flex flex-col gap-1.5 ${isMenuOpen ? 'menu-open' : 'menu-closed'}`}>
         <button
-          onClick={() => setIsMenuOpen(true)}
-          className="md:hidden absolute z-[9999] bottom-6 right-6 w-14 h-14 bg-red-500 hover:bg-red-600 rounded-full shadow-[0_4px_15px_rgba(239,68,68,0.4)] flex items-center justify-center text-white transition-all hover:scale-105"
-          title="Hiện Menu"
+          onClick={() => setViewState(v => ({ ...v, zoom: Math.min(v.zoom + 1, 20) }))}
+          className="w-10 h-10 bg-white border border-slate-200 rounded-xl shadow-lg flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:shadow-xl active:scale-95 transition-all select-none"
+          title="Phóng to"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
         </button>
-      )}
+        <button
+          onClick={() => setViewState(v => ({ ...v, zoom: Math.max(v.zoom - 1, 1) }))}
+          className="w-10 h-10 bg-white border border-slate-200 rounded-xl shadow-lg flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-slate-900 hover:shadow-xl active:scale-95 transition-all select-none"
+          title="Thu nhỏ"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
