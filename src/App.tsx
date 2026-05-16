@@ -14,6 +14,7 @@ export default function App() {
   const [schedules, setSchedules] = useState<TrainSchedule[]>([]);
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+  const [trainFilter, setTrainFilter] = useState<'ALL' | 'GROUP_SE' | 'GROUP_LOCAL'>('ALL');
   const mapRef = useRef<MapRef>(null);
 
   // Real-time Simulation Clock
@@ -148,6 +149,18 @@ export default function App() {
       setLoading(false);
     }
     init();
+
+    // 3. Refresh schedules every 15 minutes
+    const fetchInterval = setInterval(async () => {
+      try {
+        const sched = await fetchRealtimeSchedules();
+        setSchedules(sched);
+      } catch (err) {
+        console.error('Failed to refresh schedules', err);
+      }
+    }, 15 * 60 * 1000);
+
+    return () => clearInterval(fetchInterval);
   }, []);
 
   // 2. Real-time Simulation Loop
@@ -312,7 +325,12 @@ export default function App() {
         )}
 
         {schedules
-          .filter(train => !selectedTrain || train.tauId === selectedTrain.tauId)
+          .filter(train => {
+            if (selectedTrain) return train.tauId === selectedTrain.tauId;
+            if (trainFilter === 'GROUP_SE') return train.trainCode.toUpperCase().startsWith('SE');
+            if (trainFilter === 'GROUP_LOCAL') return !train.trainCode.toUpperCase().startsWith('SE');
+            return true; // ALL
+          })
           .map((train, i) => (
           <TrainMarker
             key={`${train.trainCode}-${train.tauId}-${i}`}
@@ -348,20 +366,25 @@ export default function App() {
                   <label className="text-[10px] md:text-xs font-medium text-white/80 uppercase tracking-wider mb-1 block">Chọn chuyến tàu</label>
                   <select 
                     className="w-full bg-white/20 border-0 rounded-lg text-white font-semibold py-1.5 px-3 focus:ring-0 outline-none cursor-pointer"
-                    value={selectedTrain?.tauId || 'ALL'}
+                    value={selectedTrain ? selectedTrain.tauId.toString() : trainFilter}
                     onChange={(e) => {
                        const val = e.target.value;
-                       if (val === 'ALL') setSelectedTrain(null);
-                       else {
+                       if (val === 'ALL' || val === 'GROUP_SE' || val === 'GROUP_LOCAL') {
+                         setSelectedTrain(null);
+                         setTrainFilter(val as any);
+                       } else {
                          const t = schedules.find(x => x.tauId.toString() === val);
                          if (t) {
                            setSelectedTrain(t);
+                           setTrainFilter('ALL');
                            flyToTrain(t, stations);
                          }
                        }
                     }}
                   >
                     <option value="ALL" className="text-black">Tất cả các tàu đang chạy</option>
+                    <option value="GROUP_SE" className="text-black font-bold">-- Chỉ hiện Tàu Bắc Nam (SE) --</option>
+                    <option value="GROUP_LOCAL" className="text-black font-bold">-- Chỉ hiện Tàu Địa Phương --</option>
                     <optgroup label="Tàu Bắc Nam (SE)" className="text-black">
                       {activeSchedules.filter(t => t.trainCode.toUpperCase().startsWith('SE')).map(t => (
                         <option key={t.tauId} value={t.tauId.toString()}>{t.trainCode}</option>
