@@ -218,10 +218,10 @@ export default function App() {
             'osm-tiles': {
               type: 'raster',
               tiles: [
-                'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=vi'
+                'https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
               ],
               tileSize: 256,
-              attribution: 'Map data © Google'
+              attribution: '&copy; OpenStreetMap contributors'
             }
           },
           layers: [
@@ -259,24 +259,6 @@ export default function App() {
             }}
           />
         </Source>
-
-        {/* Highlight Vietnam's Islands */}
-        <Marker longitude={111.9774} latitude={16.5413} anchor="center">
-          <div className="flex flex-col items-center select-none pointer-events-none">
-            <div className="w-2 h-2 rounded-full bg-red-500 border border-white mb-1 shadow-sm" />
-            <div className="text-slate-700 text-[10px] font-bold text-center bg-white/70 px-1.5 py-0.5 rounded backdrop-blur-sm border border-slate-200/50">
-              Quần đảo Hoàng Sa<br/>(Việt Nam)
-            </div>
-          </div>
-        </Marker>
-        <Marker longitude={114.2144} latitude={9.8661} anchor="center">
-          <div className="flex flex-col items-center select-none pointer-events-none">
-            <div className="w-2 h-2 rounded-full bg-red-500 border border-white mb-1 shadow-sm" />
-            <div className="text-slate-700 text-[10px] font-bold text-center bg-white/70 px-1.5 py-0.5 rounded backdrop-blur-sm border border-slate-200/50">
-              Quần đảo Trường Sa<br/>(Việt Nam)
-            </div>
-          </div>
-        </Marker>
 
         {visibleStations.map(st => (
           <Marker
@@ -333,9 +315,12 @@ export default function App() {
         <div className="px-6 pt-5 pb-3 shrink-0 border-b border-slate-100">
           <div className="flex justify-between items-end mb-3">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight line-clamp-1 mt-1">
+              <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight line-clamp-1">
                 {selectedTrain ? `Tàu ${selectedTrain.trainCode}` : 'Đường sắt Việt Nam'}
               </h1>
+              <p className="text-sm text-slate-500 font-medium mt-0.5">
+                Số tuyến đang vận hành: {activeSchedules.length}
+              </p>
             </div>
             <button onClick={() => setIsMenuOpen(false)} className="bg-slate-100 p-2 rounded-full text-slate-500 hover:bg-slate-200 shrink-0 ml-2" title="Ẩn Menu">
                ✕
@@ -362,18 +347,17 @@ export default function App() {
                     }}
                   >
                     <option value="ALL" className="text-black">Tất cả các tàu đang chạy</option>
-                    <optgroup label="Tàu Bắc Nam (SE)" className="text-black">
-                      {activeSchedules.filter(t => t.trainCode.toUpperCase().startsWith('SE')).map(t => (
-                        <option key={t.tauId} value={t.tauId.toString()}>{t.trainCode}</option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Tàu Địa Phương" className="text-black">
-                      {activeSchedules.filter(t => !t.trainCode.toUpperCase().startsWith('SE')).map(t => (
-                        <option key={t.tauId} value={t.tauId.toString()}>{t.trainCode}</option>
-                      ))}
-                    </optgroup>
+                    {activeSchedules.map(t => (
+                      <option key={t.tauId} value={t.tauId.toString()} className="text-black">{t.trainCode}</option>
+                    ))}
                   </select>
                 </div>
+                {!selectedTrain && (
+                  <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg w-full md:w-auto mt-2 md:mt-0">
+                    <input type="checkbox" id="toggle-stations" checked={showStations} onChange={(e) => setShowStations(e.target.checked)} className="cursor-pointer w-4 h-4 accent-white rounded" />
+                    <label htmlFor="toggle-stations" className="text-xs font-semibold text-white cursor-pointer select-none whitespace-nowrap">Hiện tất cả nhà ga</label>
+                  </div>
+                )}
              </div>
           </div>
         </div>
@@ -494,10 +478,10 @@ export default function App() {
       {!isMenuOpen && (
         <button
           onClick={() => setIsMenuOpen(true)}
-          className="md:hidden absolute z-[9999] top-4 left-4 w-12 h-12 bg-white/95 backdrop-blur-sm border border-slate-200 hover:bg-slate-50 rounded-xl shadow-lg flex items-center justify-center text-slate-700 transition-all"
+          className="md:hidden absolute z-[9999] bottom-6 right-6 w-14 h-14 bg-red-500 hover:bg-red-600 rounded-full shadow-[0_4px_15px_rgba(239,68,68,0.4)] flex items-center justify-center text-white transition-all hover:scale-105"
           title="Hiện Menu"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
       )}
     </div>
