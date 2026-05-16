@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import Map, { Source, Layer, Marker, Popup } from 'react-map-gl/mapbox';
 import type { MapRef } from 'react-map-gl/mapbox';
-import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { fetchVNTicketStations, fetchVietnamTracksAndStations, fetchRealtimeSchedules } from './api';
 import type { TrainSchedule, MappedStation } from './api';
@@ -16,7 +15,6 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
   const mapRef = useRef<MapRef>(null);
-  const nativeMapRef = useRef<mapboxgl.Map | null>(null);
 
   // Real-time Simulation Clock
   const [simTime, setSimTime] = useState<Date>(new Date());
@@ -236,7 +234,6 @@ export default function App() {
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}
         mapStyle="mapbox://styles/mapbox/light-v11"
         onLoad={(e) => {
-          nativeMapRef.current = (e.target as any);
           const map = e.target as any;
           if (typeof map.setLanguage === 'function') map.setLanguage('vi');
           if (typeof map.setWorldview === 'function') map.setWorldview('VN');
