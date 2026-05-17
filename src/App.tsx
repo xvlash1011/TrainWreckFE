@@ -81,8 +81,9 @@ export default function App() {
     const stationsGeo = allStations.map(s => ({ MaGa: s.code!, lat: s.lat, lon: s.lng }));
     
     // Attempt to calculate exact real-time position
-    const pos = calculateTrainPosition(t as any, stationsGeo, simTime);
-    if (pos) {
+    const result = calculateTrainPosition(t as any, stationsGeo, simTime, geoTracks);
+    if (result) {
+      const { position: pos } = result;
       mapRef.current.flyTo({
         center: [pos[1], pos[0]], // [lng, lat]
         zoom: 13,
